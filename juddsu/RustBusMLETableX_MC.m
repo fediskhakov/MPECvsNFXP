@@ -521,27 +521,35 @@ save(['MC' num2str(MC) '_beta' num2str(1000*beta) '_summary'], 'thetatrue', 'Tot
     'TotalSuccessNFXP', 'meanthetaNFXP', 'stdevthetaNFXP', 'biasthetaNFXP', 'RMSEthetaNFXP', 'meanObjValNFXP','meantNFXP', 'meanIterNFXP','meanFunEvalNFXP', 'meanBellEvalNFXP');
 
 fprintf('The truth, mean estimates of MPEC/AMPL, mean estimates of MPEC/ktrlink and mean estimates of NFXP/ktrlink are: \n');
-[thetatrue meanthetaAMPL meanthetaMPEC meanthetaNFXP] 
+result.mean_estimates=[thetatrue meanthetaAMPL meanthetaMPEC meanthetaNFXP];
+result.mean_estimates
 
 fprintf('The std deviation of estimates of MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[stdevthetaAMPL stdevthetaMPEC stdevthetaNFXP] 
+result.std_estimates=[stdevthetaAMPL stdevthetaMPEC stdevthetaNFXP];
+result.std_estimates
 
 fprintf('The bias in estimates of MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[biasthetaAMPL biasthetaMPEC biasthetaNFXP] 
+result.bias_estimates=[biasthetaAMPL biasthetaMPEC biasthetaNFXP];
+result.bias_estimates
 
 fprintf('The RMSE of estimates of MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[RMSEthetaAMPL RMSEthetaMPEC RMSEthetaNFXP] 
+result.rmse_estimates=[RMSEthetaAMPL RMSEthetaMPEC RMSEthetaNFXP];
+result.rmse_estimates
 
 fprintf('The average computational time (in seconds) in each run for MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[meantAMPL meantMPEC meantNFXP] 
+result.run_time=[meantAMPL meantMPEC meantNFXP];
+result.run_time
 
 fprintf('The average # of iterations in each run for MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[meanIterAMPL meanIterMPEC meanIterNFXP] 
+result.num_iter=[meanIterAMPL meanIterMPEC meanIterNFXP];
+result.num_iter
 
 fprintf('The average # of function evaluations in each run for MPEC/AMPL, MPEC/ktrlink, and NFXP/ktrlink are: \n');
-[meanFunEvalAMPL meanFunEvalMPEC meanFunEvalNFXP] 
+result.ave_feval=[meanFunEvalAMPL meanFunEvalMPEC meanFunEvalNFXP];
+result.ave_feval
 
 fprintf('The average # of Bellman iterations in the inner loop of NFXP in each run of NFXP/ktrlink is: \n');
-[meanBellEvalNFXP] 
+result.ave_bellmaniter=[meanBellEvalNFXP];
+result.ave_bellmaniter
 
 diary off;
