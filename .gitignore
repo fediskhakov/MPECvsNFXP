@@ -4,6 +4,7 @@
 **/*.out
 **/*.zip
 **/*.sol
+**/*.dat
 *~
 **/tmp*
 **/output
