@@ -392,7 +392,8 @@ for kk = 1:MC
     %%% We provide first-order analytical derivatives and sparsity pattern
     %%% of the constraint Jacobian to the solver.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+    if param.runMPECktrlink
+
     ktroptsMPEC = optimset('DerivativeCheck','on','Display','iter',...
         'GradConstr','on','GradObj','on','TolCon',1E-6,'TolFun',1E-6,'TolX',1E-15,'JacobPattern',JacobSpaPattern, 'HessPattern', HessSpaPattern); 
 
@@ -422,7 +423,8 @@ for kk = 1:MC
             end
         end
     end
-
+    
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Step 4) 
     %%% Estimate the model using the NFXP algorithm with MATLAB/ktrlink 
@@ -433,7 +435,8 @@ for kk = 1:MC
     %%% with KNITRO (ktrlink) as the solver. 
     %%% We provide first-order analytical derivatives to the solver.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
+    if param.runNFXP
+
     ktroptsNFXP = optimset('Display','iter','GradObj','on','TolCon',1E-6,'TolFun',1E-6,'TolX',1E-15);
     
     G = -1.0e10;
@@ -462,6 +465,7 @@ for kk = 1:MC
                 G = -fvalNFXP_reps;
             end
         end
+    end
     end
 end
 

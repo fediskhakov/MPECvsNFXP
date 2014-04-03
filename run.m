@@ -32,6 +32,8 @@ param.logfile=sprintf('RustBusMLETableX_MC_Multistart_beta%3.0f.out',1000*param.
 param.MC=2;	
 param.multistarts=2;
 param.figure=0;
+param.runNFXP=0;
+param.runMPECktrlink=0;
 
 %call Judd and Su code
 cd juddsu/
