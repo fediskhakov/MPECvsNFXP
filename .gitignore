@@ -1,9 +1,11 @@
-*.pdf
-*.mat
-*.mex*
-*.out
-*.zip
+**/*.pdf
+**/*.mat
+**/*.mex*
+**/*.out
+**/*.zip
+**/*.sol
 *~
 **/tmp*
 **/output
+**/EV
 
