@@ -1,0 +1,9 @@
+*.pdf
+*.mat
+*.mex*
+*.out
+*.zip
+*~
+**/tmp*
+**/output
+
