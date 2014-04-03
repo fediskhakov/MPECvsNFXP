@@ -25,8 +25,12 @@
 % Estimation of Structural Models.
 % Code Revised: Che-Lin Su, May 2010.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+global param
+if ~exist('param')
+    error 'Stracture of parameters ''param'' is required for this script to run.'
+end
 
-diary RustBusMLETableX_MC_Multistart_beta975.out
+diary(param.logfile);
 
 global beta N M x xt dt nT nBus indices 
 global PayoffDiffPrime TransProbPrime CbEVPrime RPrime EVPrime
@@ -35,23 +39,33 @@ global EVold tol_inner BellEval
 % Specify the true values of structural parameters in the data generating
 % process. For Monte Carlo experiments with a different the discount factor,
 % change the value for beta below. 
-beta = 0.975; 
-nT = 120;
-nBus = 50;
-N = 175;
-M = 5;
-RC = 11.7257;
-thetaCost = 2.4569;
-thetaProbs = [ 0.0937
-       0.4475
-       0.4459
-       0.0127
-       0.0002 ];
-   
+% beta = 0.975; 
+% nT = 120;
+% nBus = 50;
+% N = 175;
+% M = 5;
+% RC = 11.7257;
+% thetaCost = 2.4569;
+% thetaProbs = [ 0.0937
+%        0.4475
+%        0.4459
+%        0.0127
+%        0.0002 ];
+beta = param.beta; 
+nT = param.nT;
+nBus = param.nBus;
+N = param.N;
+M = param.M;
+RC = param.RC;
+thetaCost = param.thetaCost;
+thetaProbs = param.thetaProbs;
+  
 thetatrue = [thetaCost; thetaProbs; RC];
 
-MC = 250;   % number of monte carlo replications   
-multistarts = 5; % number of starting points
+% MC = 250;   % number of monte carlo replications   
+% multistarts = 5; % number of starting points
+MC = param.MC;   % number of monte carlo replications   
+multistarts = param.multistarts; % number of starting points
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Step 1) 
@@ -78,17 +92,20 @@ fclose(fid);
 % The ampl executable in my computer is in the directory:
 % "/Applications/AMPL/ampl64"
 % Change the path below to the location of your AMPL executable.
-strAmplCommand = '/Applications/AMPL/ampl64/ampl';    
+%strAmplCommand = '/Applications/AMPL/ampl64/ampl';
+strAmplCommand = param.ampl_command;
 outname = ['EV/SolveEV.out'];  
 strAmplSystemCall = sprintf('%s RustBusMLETableXSolveEV.run > %s', strAmplCommand, outname);
 [status,result] = system(strAmplSystemCall);
 EV = csvread('EV/EV.sol');
 
+if param.figure
 figure;
 plot(EV);
 title(['Ev(x,0) for \beta =' num2str(beta) '; Fixed Point Dim = 175']);
 xlabel('x');
 ylabel('EV(x,0)');
+end
 
 save (['truethetaEV_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x');   
 
@@ -316,7 +333,8 @@ for kk = 1:MC
         % The ampl executable in my computer is in the directory:
         % "/Applications/AMPL/ampl64"
         % Change the path below to the location of your AMPL executable.
-        strAmplCommand = '/Applications/AMPL/ampl64/ampl'; 
+        %strAmplCommand = '/Applications/AMPL/ampl64/ampl';
+        strAmplCommand = param.ampl_command; 
         outname = ['output/MC' num2str(kk) '_multistart' num2str(reps) '.out']; 
         strAmplSystemCall = sprintf('%s RustBusMLETableX.run > %s', strAmplCommand, outname);
         [status,result] = system(strAmplSystemCall);
@@ -335,6 +353,7 @@ for kk = 1:MC
         IterAMPL_reps = sscanf(line3, '%d',1);
         FunEvalAMPL_reps = sscanf(line3, '%*s %*s %d',1);
         fclose(fid); 
+        delete('KnitroMessage.sol'); %to preven the file being used again by mistake - if ample fails to run
         
         fprintf('\n');
         disp([line1])
