@@ -9,7 +9,7 @@ addpath([currdir filesep 'matlab_include']);
 global param
 
 %paths for knitro and ampl
-param.ampl_command='ampl'
+param.ampl_command='ampl';
 %Need to have correct env variable for knitro to be able to run under ampl!!!
 setenv('DYLD_LIBRARY_PATH','/usr/local/knitro900/lib') 
 
@@ -29,14 +29,14 @@ param.thetaProbs = [ 0.0937
 
 %system and MC parameters
 param.logfile=sprintf('RustBusMLETableX_MC_Multistart_beta%3.0f.out',1000*param.beta);
-param.MC=250;
-param.multistarts=5;
+param.MC=2;	
+param.multistarts=2;
 param.figure=0;
 
 %call Judd and Su code
-delete(param.logfile);
 cd juddsu/
+delete(param.logfile);
 RustBusMLETableX_MC
-
+cd ..
 
 
