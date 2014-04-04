@@ -93,11 +93,22 @@ fclose(fid);
 % "/Applications/AMPL/ampl64"
 % Change the path below to the location of your AMPL executable.
 %strAmplCommand = '/Applications/AMPL/ampl64/ampl';
+fprintf('Running initial solver to compute EV for Monte Carlo simulations ..');
 strAmplCommand = param.ampl_command;
 outname = ['EV/SolveEV.out'];  
 strAmplSystemCall = sprintf('%s RustBusMLETableXSolveEV.run > %s', strAmplCommand, outname);
 [status,result] = system(strAmplSystemCall);
 EV = csvread('EV/EV.sol');
+
+%Check that solution used for simulations is ok
+fid = fopen('EV/KnitroExit.sol');
+if sscanf(fgetl(fid),'%d',1)~= 0
+    error 'Initial solution failed, no EV is calculated for simulation. Check EV/SolveEV.out for details'
+else
+    fprintf(' done.\n');
+end
+fclose(fid);
+delete('EV/KnitroExit.sol'); %to preven the file being used again by mistake - if ample fails to run
 
 if param.figure
 figure;
@@ -423,7 +434,7 @@ for kk = 1:MC
             end
         end
     end
-    
+
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Step 4) 
