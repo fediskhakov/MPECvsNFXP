@@ -131,6 +131,7 @@ rand('seed',rand_seed);
 
 MC_xt = zeros(nT, nBus, MC);
 MC_dt = zeros(nT, nBus, MC);
+MC_dx = zeros(nT, nBus, MC);
 
 for kk = 1:MC
    
@@ -157,9 +158,10 @@ for kk = 1:MC
     end
     MC_dt(:,:,kk) = dt;
     MC_xt(:,:,kk) = xt;
+    MC_dx(:,:,kk) = dx;
 end
 
-save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt');   
+save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt', 'MC_dx');   
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Setup Optimization Problem for MPEC
