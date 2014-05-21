@@ -161,7 +161,13 @@ for kk = 1:MC
     MC_dx(:,:,kk) = dx;
 end
 
-save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt', 'MC_dx');   
+%Generating starting Points
+X0 = zeros(7+N,multistarts);
+X0(1,:)= (1:1:multistarts);
+X0(2:6,:)=1/M;
+X0(7,:)= (4:1:4+(multistarts-1));
+
+save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt', 'MC_dx','X0');   
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Setup Optimization Problem for MPEC
@@ -293,11 +299,6 @@ SuccessNFXP = zeros(MC,1);
 numBellEvalsol = zeros(MC,1);
 
 
-%Generating starting Points
-X0 = zeros(7+N,multistarts);
-X0(1,:)= (1:1:multistarts);
-X0(2:6,:)=1/M;
-X0(7,:)= (4:1:4+(multistarts-1));
 
 %Initial estimates for NFXP
 % theta0 = X0(1:7);
