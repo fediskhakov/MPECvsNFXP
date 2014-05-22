@@ -75,7 +75,7 @@ runtime=zeros(param.MC*param.multistarts,3);
 %%% value functions and compute the conditional choice probabilities to 
 %%% simulate data of mileage transitions and decisions for 250 data sets; 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+if param.runInitEV
 % Call AMPL to solve for EV 
 
 % Create the AMPL data file and write MATLAB data to AMPL format.
@@ -121,7 +121,7 @@ ylabel('EV(x,0)');
 end
 
 save (['truethetaEV_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x');   
-
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Simulate Data for 250 date sets -- (state, decision) = (xt,dt)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
