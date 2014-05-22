@@ -67,6 +67,8 @@ thetatrue = [thetaCost; thetaProbs; RC];
 MC = param.MC;   % number of monte carlo replications   
 multistarts = param.multistarts; % number of starting points
 
+runtime=zeros(param.MC*param.multistarts,3);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Step 1) 
 %%% Call AMPL to solve the integrated Bellman equations for the expected 
@@ -358,6 +360,7 @@ for kk = 1:MC
         
         SolveTimeAMPL_reps = csvread('output/solvetime.sol');
         SolveTimeAMPL(kk) = SolveTimeAMPL(kk) + SolveTimeAMPL_reps;
+        runtime((kk-1)*multistarts+reps,1)=SolveTimeAMPL_reps;
         
         fid = fopen('KnitroMessage.sol');
         line1 = fgetl(fid);
@@ -424,6 +427,7 @@ for kk = 1:MC
         tMPEC_reps = cputime - t1;
         
         tMPECsol(kk) = tMPECsol(kk) + tMPEC_reps;
+        runtime((kk-1)*multistarts+reps,2)=tMPEC_reps;
         IterMPECsol(kk) = IterMPECsol(kk) + outputMPEC.iterations;
         FunEvalMPECsol(kk) = FunEvalMPECsol(kk) + outputMPEC.funcCount;
         
@@ -466,6 +470,7 @@ for kk = 1:MC
         [thetaNFXP_reps fvalNFXP_reps flagNFXP_reps outputNFXP] = ktrlink(@likelihoodNFXP,theta0,[],[],NFXPAeq,NFXPbeq,NFXPlb,NFXPub,[],ktroptsNFXP,'knitroOptions.opt');     
         tNFXP_reps = cputime - t2;
         tNFXPsol(kk) = tNFXPsol(kk) + tNFXP_reps;
+        runtime((kk-1)*multistarts+reps,3)=tNFXP_reps;
         IterNFXPsol(kk) = IterNFXPsol(kk) + outputNFXP.iterations;
         FunEvalNFXPsol(kk) = FunEvalNFXPsol(kk) + outputNFXP.funcCount;
         numBellEvalsol(kk) = numBellEvalsol(kk) + BellEval;
@@ -503,6 +508,7 @@ biasthetaAMPL = meanthetaAMPL - thetatrue;
 RMSEthetaAMPL = sqrt(mean((thetaAMPLsol(:, KnitroExitAMPL==0)- repmat(thetatrue,1,sum(KnitroExitAMPL==0))).^2,2));
 meanObjValAMPL = mean(ObjValAMPL(KnitroExitAMPL==0));
 
+result.runtime=runtime;
 meantAMPL = mean(SolveTimeAMPL)/multistarts;
 meanIterAMPL = mean(IterAMPL)/multistarts;
 meanFunEvalAMPL = mean(FunEvalAMPL)/multistarts;
@@ -537,6 +543,9 @@ meanBellEvalNFXP = mean(numBellEvalsol)/multistarts;
 save(['MC' num2str(MC) '_beta' num2str(1000*beta) '_summary'], 'thetatrue', 'TotalSuccessAMPL', 'meanthetaAMPL', 'stdevthetaAMPL', 'biasthetaAMPL', 'RMSEthetaAMPL', 'meanObjValAMPL','meantAMPL', 'meanIterAMPL','meanFunEvalAMPL', ...
     'TotalSuccessMPEC', 'meanthetaMPEC', 'stdevthetaMPEC', 'biasthetaMPEC', 'RMSEthetaMPEC', 'meanObjValMPEC','meantMPEC', 'meanIterMPEC','meanFunEvalMPEC', ...
     'TotalSuccessNFXP', 'meanthetaNFXP', 'stdevthetaNFXP', 'biasthetaNFXP', 'RMSEthetaNFXP', 'meanObjValNFXP','meantNFXP', 'meanIterNFXP','meanFunEvalNFXP', 'meanBellEvalNFXP');
+
+result.TotalSuccess=[TotalSuccessAMPL TotalSuccessMPEC TotalSuccessNFXP];
+result.Runs=[MC*multistarts MC*multistarts MC*multistarts];
 
 fprintf('The truth, mean estimates of MPEC/AMPL, mean estimates of MPEC/ktrlink and mean estimates of NFXP/ktrlink are: \n');
 result.mean_estimates=[thetatrue meanthetaAMPL meanthetaMPEC meanthetaNFXP];
