@@ -68,6 +68,7 @@ MC = param.MC;   % number of monte carlo replications
 multistarts = param.multistarts; % number of starting points
 
 runtime=zeros(param.MC*param.multistarts,3);
+converged=zeros(param.MC*param.multistarts,3);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Step 1) 
@@ -384,6 +385,7 @@ for kk = 1:MC
         ObjVal_reps = csvread('output/objval.sol');
         KnitroExitFlag_reps = csvread('output/KnitroExit.sol'); 
         
+        converged((kk-1)*multistarts+reps,1)=(KnitroExitFlag_reps==0);
         if KnitroExitFlag_reps == 0
             SuccessAMPL(kk) = SuccessAMPL(kk)+1;
             KnitroExitAMPL(kk) = KnitroExitFlag_reps;
@@ -431,6 +433,7 @@ for kk = 1:MC
         IterMPECsol(kk) = IterMPECsol(kk) + outputMPEC.iterations;
         FunEvalMPECsol(kk) = FunEvalMPECsol(kk) + outputMPEC.funcCount;
         
+        converged((kk-1)*multistarts+reps,2)=(flagMPEC_reps==0);
         if flagMPEC_reps == 0
             SuccessMPEC(kk) = SuccessMPEC(kk)+1;
             flagMPECsol(kk) = flagMPEC_reps;        
@@ -475,6 +478,7 @@ for kk = 1:MC
         FunEvalNFXPsol(kk) = FunEvalNFXPsol(kk) + outputNFXP.funcCount;
         numBellEvalsol(kk) = numBellEvalsol(kk) + BellEval;
         
+        converged((kk-1)*multistarts+reps,3)=(flagNFXP_reps==0);
         if flagNFXP_reps == 0
             SuccessNFXP(kk) = SuccessNFXP(kk)+1;
             flagNFXPsol(kk) = flagNFXP_reps;
@@ -509,6 +513,8 @@ RMSEthetaAMPL = sqrt(mean((thetaAMPLsol(:, KnitroExitAMPL==0)- repmat(thetatrue,
 meanObjValAMPL = mean(ObjValAMPL(KnitroExitAMPL==0));
 
 result.runtime=runtime;
+result.converged=converged;
+
 meantAMPL = mean(SolveTimeAMPL)/multistarts;
 meanIterAMPL = mean(IterAMPL)/multistarts;
 meanFunEvalAMPL = mean(FunEvalAMPL)/multistarts;
