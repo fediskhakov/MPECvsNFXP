@@ -326,6 +326,14 @@ for kk = 1:MC
     xt = MC_xt(:,:,kk);
     dt = MC_dt(:,:,kk);
     
+    if param.FreqX0
+        X0(2:6,:)=0;
+        tab=tabulate(reshape(MC_dx(:,:,kk),[],1)-1);
+        tab=tab(tab(:,3)>0,:);
+        X0(2:1+size(tab,1),:)=repmat(tab(:,3)/100,1,size(X0,2));
+    end
+
+
     G = -1.0e10;
     
     for reps = 1:multistarts 
