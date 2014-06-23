@@ -10,3 +10,8 @@
 **/output
 **/EV
 
+*.png
+juddsu/*_result
+juddsu/*_summary
+juddsu/*MC*_beta*
+results/
