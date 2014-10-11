@@ -1,0 +1,32 @@
+--- /Users/fedor/Dropbox/RESEARCH/IRS.shared/EctaComment/code_clean/high_dim/RustBusMLETableX.run 
++++ /Users/fedor/Dropbox/RESEARCH/IRS.shared/EctaComment/code_clean/high_dim/RustBusMLETableX_PML.run 
+@@ -11,7 +11,8 @@
+ 
+      let thetaCost := inithetaCost;
+      let RC := iniRC;     
+-     let {i in 1..M} thetaProbs[i] := 1/M;
++# No thetaProbs var in partial ML     
++#     let {i in 1..M} thetaProbs[i] := 1/M;
+      let {i in X} EV[i] := iniEV;
+ 
+ # Solve command
+@@ -43,15 +44,15 @@
+ # display the value function
+       display EV;
+ 
+-# display the structural parameters (remember beta was fixed)
++# display the structural parameters (remember beta and thetaProbs was fixed)
+   display beta, RC, thetaCost, thetaProbs;
+   printf "%10.7f \n", _solve_time > output/solvetime.sol;
+   printf "%10.7f \n", Likelihood > output/objval.sol;     
+   printf "%10.7f \n", RC > output/RC.sol;
+   printf "%10.7f \n", thetaCost > output/thetaCost.sol;
+-for {i in 1..M} {
+-  	printf "%10.7f \n", thetaProbs[i] > output/thetaProbs.sol;
+-}
++#for {i in 1..M} {
++#  	printf "%10.7f \n", thetaProbs[i] > output/thetaProbs.sol;
++#}
+ 
+ # write EV to a file EV.sol 
+ for {i in X} {
