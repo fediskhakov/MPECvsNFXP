@@ -1,6 +1,6 @@
 # Call solver and give it options
 
-model RustBusMLETableXreform1.mod;
+model RustBusMLETableX.mod;
 data RustBusMLETableX.dat;
  
 # Specify KNITRO solver options:
