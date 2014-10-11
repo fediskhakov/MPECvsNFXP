@@ -103,24 +103,29 @@ maximize Likelihood:
 
 subject to 
 #  Bellman equation for states below N-M
+#	Bellman_1toNminusM {i in X: i <= N-(M-1)}: 
+#		EV[i] = sum {j in 0..(M-1)} 
+#			log(exp(CbEV[i+j])+ exp(-RC + CbEV[1]))* thetaProbs[j+1];
 	Bellman_1toNminusM {i in X: i <= N-(M-1)}: 
-		EV[i] = sum {j in 0..(M-1)} 
-			log(exp(CbEV[i+j])+ exp(-RC + CbEV[1]))* thetaProbs[j+1];
+		EV[i]-(-RC-Cost[1]+beta*EV[1]) = sum {j in 0..(M-1)} 
+			log(exp(-PayoffDiff[i+j])+ 1)* thetaProbs[j+1];
 
 #  Bellman equation for states above N-M, (we adjust transition probabilities to keep state in [xmin, xmax])
 	Bellman_LastM {i in X: i > N-(M-1) and i <= N-1}: 
-		EV[i] = (sum {j in 0..(N-i-1)} 
-			log(exp(CbEV[i+j])+ exp(-RC + CbEV[1]))* thetaProbs[j+1]) 
-			+ (1- sum {k in 0..(N-i-1)} thetaProbs[k+1]) * log(exp(CbEV[N])+ exp(-RC + CbEV[1]));
+		EV[i]-(-RC-Cost[1]+beta*EV[1]) = (sum {j in 0..(N-i-1)} 
+			log(exp(-PayoffDiff[i+j])+ 1)* thetaProbs[j+1]) 
+			+ (1- sum {k in 0..(N-i-1)} thetaProbs[k+1]) * log(exp(-PayoffDiff[N])+ 1);
 
 #  Bellman equation for state N
-	Bellman_N:  EV[N] = log(exp(CbEV[N])+ exp(-RC + CbEV[1]));
+	Bellman_N:  EV[N]-(-RC-Cost[1]+beta*EV[1]) = log(exp(-PayoffDiff[N])+ 1);
 
 #  The probability parameters in transition process must add to one
    Probability: sum {i in 1..M} thetaProbs[i] = 1;
 
 #  Put bound on EV; this should not bind, but is a cautionary step to help keep algorithm within bounds
-     EVBound {i in X}: EV[i] <= 500;
+     EVupBound {i in X}: EV[i] <= 50;
+#      EVlowBound {i in X}: EV[i] >= -500;			
+
 
 # END OF DEFINING OBJECTIVE FUNCTION AND CONSTRAINTS
 
@@ -140,6 +145,7 @@ Bellman_1toNminusM,
 Bellman_LastM, 
 Bellman_N, 
 Probability,
-EVBound;
+EVupBound;
+# EVlowBound;
 
 # END OF DEFINING THE MLE OPTIMIZATION PROBLEM

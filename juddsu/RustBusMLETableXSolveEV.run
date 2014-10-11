@@ -1,6 +1,6 @@
 # Call solver and give it options
 
-model RustBusMLETableXSolveEV.mod;
+model RustBusMLETableXSolveEVreform1.mod;
 data RustBusMLETableXSolveEV.dat;
  
 # Specify KNITRO solver options:
@@ -8,7 +8,7 @@ data RustBusMLETableXSolveEV.dat;
 option knitro_options 'alg=1 outlev=3 maxit=200', solver knitroampl; 
  
 # Initial guesses set at trivial values; probably not good initial guess
-     let {i in X} EV[i] := -50;
+     let {i in X} EV[i] := -10;
      let RC := RCsol; 
      let thetaCost := thetaCostsol;
      let {i in 1..M} thetaProbs[i] := thetaProbssol[i];
