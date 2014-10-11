@@ -28,3 +28,6 @@ Runtime plot:
 Folder high_dim/ contains all the code for higher dimensional partial likelihood estimation, which required
 substantial edits of the original Judd-Su code.  The folder contains .diff files which show exactly what
 changes had been made to the AMPL code.
+
+The MPEC/AMPL code was updated after Che-Lin's recentering of the value function, so that logsum does not 
+produce overflow/underflow errors. MPEC convergence issue is fixed.
