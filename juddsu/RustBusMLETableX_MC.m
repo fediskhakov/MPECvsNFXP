@@ -363,7 +363,7 @@ for kk = 1:MC
         outname = ['output/MC' num2str(kk) '_multistart' num2str(reps) '.out']; 
         strAmplSystemCall = sprintf('%s RustBusMLETableX.run > %s', strAmplCommand, outname);
         [status,result] = system(strAmplSystemCall);
-    
+
         MC_status = [MC_status; status];
         MC_result = [MC_result; result];
         
@@ -515,7 +515,7 @@ save(['MC' num2str(MC) '_beta' num2str(1000*beta) '_result'], 'thetatrue', 'thet
 TotalSuccessAMPL = sum(SuccessAMPL);
 fprintf('MPEC/AMPL finishes successfully in #%d out of %d runs \n \n', TotalSuccessAMPL, MC*multistarts);
 meanthetaAMPL = mean(thetaAMPLsol(:, KnitroExitAMPL==0),2);
-stdevthetaAMPL = std(thetaAMPLsol(:, KnitroExitAMPL==0),2);
+stdevthetaAMPL = std(thetaAMPLsol(:, KnitroExitAMPL==0),1,2);
 biasthetaAMPL = meanthetaAMPL - thetatrue;
 RMSEthetaAMPL = sqrt(mean((thetaAMPLsol(:, KnitroExitAMPL==0)- repmat(thetatrue,1,sum(KnitroExitAMPL==0))).^2,2));
 meanObjValAMPL = mean(ObjValAMPL(KnitroExitAMPL==0));
@@ -531,7 +531,7 @@ TotalSuccessMPEC = sum(SuccessMPEC);
 fprintf('MPEC/ktrlink finishes successfully in #%d out of %d runs \n \n', TotalSuccessMPEC, MC*multistarts);
 
 meanthetaMPEC = mean(thetaMPECsol(:,flagMPECsol==0),2);
-stdevthetaMPEC = std(thetaMPECsol(:,flagMPECsol==0),2);
+stdevthetaMPEC = std(thetaMPECsol(:,flagMPECsol==0),1,2);
 biasthetaMPEC = meanthetaMPEC - thetatrue;
 RMSEthetaMPEC = sqrt(mean((thetaMPECsol(:, flagMPECsol==0) - repmat(thetatrue,1,sum(flagMPECsol==0))).^2,2));
 meanObjValMPEC = mean(fvalMPECsol(flagMPECsol==0));
@@ -544,7 +544,7 @@ TotalSuccessNFXP = sum(SuccessNFXP);
 fprintf('NFXP/ktrlink finishes successfully in #%d out of %d runs \n \n', TotalSuccessNFXP, MC*multistarts);
 
 meanthetaNFXP = mean(thetaNFXPsol(:,flagNFXPsol==0),2);
-stdevthetaNFXP = std(thetaNFXPsol(:,flagNFXPsol==0),2);
+stdevthetaNFXP = std(thetaNFXPsol(:,flagNFXPsol==0),1,2);
 biasthetaNFXP = meanthetaNFXP - thetatrue;
 RMSEthetaNFXP = sqrt(mean((thetaNFXPsol(:, flagNFXPsol==0)- repmat(thetatrue,1,sum(flagNFXPsol==0))).^2,2));
 meanObjValNFXP = mean(fvalNFXPsol(flagNFXPsol==0));
