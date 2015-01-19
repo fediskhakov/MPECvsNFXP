@@ -15,10 +15,25 @@ S.N=param.nBus;
 S.T=param.nT;
 
 %parameters of algorithms
-fxp_opt.printfxp=0;		% 0: No output,1: Fixed point iteration output 1   
 ml_opt.title='Structural parameters in Rust(1987) Engine replacement model';
 ml_opt.output=0;     % 0: No output, 1: Only final output,2: Detailed iteration output
 ml_opt.method='Full MLE';  % 'Full MLE' or 'Partial MLE'
+ml_opt.tol_bhhh=5e-1; 	%tolerance on grid*direc convergence stopping
+ml_opt.hess=0; 		  	% No analytical hessian supplied
+
+% Options for fixed point algorithm
+fxp_opt.max_fxpiter= 2;             % Maximum number of times to switch between Newton-Kantorovich iterations and contraction iterations
+fxp_opt.min_cstp   = 2;             % Minimum number of contraction steps
+fxp_opt.max_cstp   = 20;            % Maximum number of contraction steps
+fxp_opt.ctol       = 0.01;          % Tolerance before switching to N-K algorithm
+fxp_opt.rtol       = 0.02;          % Relative tolerance before switching to N-K algorithm
+fxp_opt.nstep      = 20;            % Maximum number of Newton-Kantorovich steps
+fxp_opt.ltol0      = 1.0e-10;       % Final exit tolerance in fixed point algorithm, measured in units of numerical precision
+fxp_opt.printfxp   = 0;             % print iteration info for fixed point algorithm if > 0
+
+%output the options used
+out.ml_opt=ml_opt;
+out.fxp_opt=fxp_opt;
 
 out.Runs=0;
 out.TotalSuccess=0;
@@ -27,9 +42,10 @@ out.TotalSuccess=0;
 for i_mc=1:param.MC
 
 	%convert simulated data to Bertel's format
-	datasim.d=reshape(MC_dt(:,:,i_mc)+1,S.T*S.N,1);
-	datasim.x=reshape(MC_xt(:,:,i_mc),S.T*S.N,1);
-	datasim.dx1=reshape(MC_dx(:,:,i_mc)-1,S.T*S.N,1);
+	%MPEC/AMPL code skips the first observation
+	datasim.d=reshape(MC_dt(2:S.T,:,i_mc)+1,(S.T-1)*S.N,1);
+	datasim.x=reshape(MC_xt(2:S.T,:,i_mc),(S.T-1)*S.N,1);
+	datasim.dx1=reshape(MC_dx(1:S.T-1,:,i_mc)-1,(S.T-1)*S.N,1);
 
 	for reps=1:param.multistarts
 		%multistarts only differ in starting values
@@ -47,15 +63,15 @@ for i_mc=1:param.MC
 		mp_start.p=p; %freq estimator
 
 	  % Likelihood function wrappers
-	  ll_p=@(mp) ll(datasim, X, P, mp, fxp_opt, 'pmle');
+	    ll_p=@(mp) ll(datasim, X, P, mp, fxp_opt, 'pmle');
 		ll_f=@(mp) ll(datasim, X, P, mp, fxp_opt, 'fullmle');
 		% Partial likelihood for RC and c (Step 1)
 		estimationtimer=tic;
-	  pnames={'RC','c'};
-		[mphat, mpse, cov, g, llval, iterinfo1]=nfxp.maxlik(ll_p, mp_start, pnames, ml_opt);
+	    pnames={'RC','c'};
+		[mphat, mpse, cov, g, llval_p, iterinfo1]=nfxp.maxlik(ll_p, mp_start, pnames, ml_opt);
 		% Full likelihood (Step 2)
 		pnames={'RC','c','p'};
-		[mphat, mpse, cov, g, llval, iterinfo2]=nfxp.maxlik(ll_f, mphat, pnames, ml_opt);
+		[mphat, mpse, cov, g, llval_f, iterinfo2]=nfxp.maxlik(ll_f, mphat, pnames, ml_opt);
 		timetoestimate=toc(estimationtimer);
 		%save results
 		j=(i_mc-1)*param.multistarts+reps; %index of the row in the results structure
@@ -78,6 +94,8 @@ for i_mc=1:param.MC
 		out.FuncEval(j)=iterinfo1.ll+iterinfo2.ll;
 		out.BellmanIter(j)=iterinfo1.BellmanIter+iterinfo2.BellmanIter;
 		out.NKIter(j)=iterinfo1.NKIter+iterinfo2.NKIter;
+		out.llp(j)=sum(llval_p);
+		out.llf(j)=sum(llval_f);
 
 	end
 end
@@ -92,6 +110,8 @@ if 1
 	fprintf('RC = %10.5f \n',param.RC);
 	fprintf('c = %10.5f \n',param.thetaCost);
 	fprintf('Number of grid points = %g \n',param.N);
+	fprintf('Partial likelihood= %g \n',mean(out.llp));
+	fprintf('Full likelihood= %g \n',mean(out.llf));
 	fprintf('---------------------------------------------------------------------------------------------------------\n');
 	fprintf('Rust 87 algorithm (2 stage likelihood, frequency based starting values\n');
 	fprintf('---------------------------------------------------------------------------------------------------------\n');

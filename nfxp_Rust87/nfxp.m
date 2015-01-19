@@ -112,7 +112,7 @@ classdef nfxp
         end
         
         
-        function [ev, pk]=bellman(ev, P, c, mp)
+        function [ev1, pk]=bellman(ev, P, c, mp)
             % NFXP.BELMANN:     Procedure to compute bellman equation
             %
             % Syntax :          ev=nfpx.bellman(ev, P, c, mp);
@@ -125,35 +125,24 @@ classdef nfxp
             %                   guess of ev
             % See also:
             %   nfxp.maxlik, nfxp.solve, nfxp.dbellman
-            V=-c+mp.beta*ev- (-mp.RC-c(1)+mp.beta*ev(1));
-            maxV=max(V, 0);
-            ev=P*(maxV + log(exp(V-maxV)  +  exp(-maxV)));
-%           ev=nfxp.E(maxV + log(exp(V-maxV)  +  exp(-maxV)),mp.p);
+            VK=-c+mp.beta*ev;
+            VR=-mp.RC-c(1)+mp.beta*ev(1);
+            maxV=max(VK, VR);
+            ev1=P*(maxV + log(exp(VK-maxV)  +  exp(VR-maxV)));
             if nargout>1
-                pk=1./(1+exp(-V));
+                %also compute choice probability from ev (initial input)
+                pk=1./(1+exp((VR-VK)));
             end
-            
         end % end of NFXP.bellman
                 
         
-        function dev=dbellman(ev, pk,  P, mp)
-            % NFXP.BELMANN:     Procedure to compute bellman equation
-            %
-            % Syntax :          ev=nfpx.dbellman(ev, pk,  P, mp);
-            %
-            % See also:
-            %   nfxp.maxlik, nfxp.solve, nfxp.bellman
-            
-            n=numel(ev);
-            
+        function dev=dbellman(pk,  P, mp)
+            % NFXP.DBELMANN:     Procedure to compute Frechet derivative of Bellman operator
+            % Syntax :          ev=nfpx.dbellman(pk,  P, mp);
+            n=numel(pk);
             tmp=P(:,2:n).*repmat(pk(2:n,1)',n,1);
-            dev=(mp.beta*[-(sum(tmp,2)) tmp]);
-            
-            %Faster for large scale problems
-            %tmp=bsxfun(@times, P(:,2:n), pk(2:n,1)');
-            %?dev=sparse(mp.beta*[-(sum(tmp,2)) tmp]);
-            
-        end % end of NFXP.bellman
+            dev=(mp.beta*[1-(sum(tmp,2)) tmp]);
+        end
         
         
         function [ev, pk, F]=solve(ev, P, cost, mp, options)
@@ -162,41 +151,19 @@ classdef nfxp
             %  syntax:	[ Pk,EV,dEV]=nfxp.solve(ev, P, cost, mp, options):
             %
             %  INPUT:
-            %     EV :      m x nc matrix or scalar zero. Initial guess of choice specific expected value function, EV.
+            %     EV :      m x 1 matrix or scalar zero. Initial guess of choice specific expected value function, EV.
             %     P:        State transition matrix
             %     cost:     State transition matrix
             %     mp:       Structure containing model parameters: mp.beta, mp.RC, mp.c, mp.ev
             %     options:  Optional setting for Fixed Point Algorithm
             %
-            %     options.max_fxpiter (integer);
-            %       Maximum number of times to switch between Newton-Kantorovich iterations and contraction iterations (default: 2).
-            %
-            %     options.min_cstp (integer):
-            %       Minimum number of contraction steps (default: 6)
-            %
-            %     options.max_cstp (integer):
-            %       Maximum number of contraction steps (default: 30)
-            %
-            %     options.ctol:
-            %       Tolerance before switching to N-K algorithm (default: 0.1)
-            %
-            %     options.rtol:
-            %       Relative tolerance before switching to N-K algorithm (default: 0.1)
-            %
-            %     options.nstep
-            %       Maximum number of Newton-Kantorovich steps
-            %
-            %     options.ltol0
-            %       Final exit tolerance in fixed point algorithm, measured in units of numerical precision (default is 1.0e-12)
-            %
-            %     options.printfxp
-            %       Print iteration info for fixed point algorithm if > 0 (default is 0)
-            %
             %  OUTPUT:
             %     Pk:     m x 1 matrix of conditional choice probabilities, P(d=keep|x)
             %     EV:     m x 1 matrix of expected value functions, EV(x)
-            %     F:      m x m matrix of derivatives of Identity matrix
-            %             minus contraction mapping operator, I-T' where T' refers to derivative of the expected  value function
+            %     F:      m x m matrix of derivatives of Identity matrix I minus 
+            %             contraction mapping operator, I-T' where T' refers to derivative of the expected  value function
+            %
+            %  FOR OPTIONS: see nfxp.m
             %
             % See also:
             %   nfxp.maxlik, nfxp.bellman
@@ -205,103 +172,145 @@ classdef nfxp
             % Default settings for Fixed point algorithm
             
             global BellmanIter NKIter;
-
-            opt.max_fxpiter= 1;             % Maximum number of times to switch between Newton-Kantorovich iterations and contraction iterations.
-            opt.min_cstp   = 2;             % Minimum number of contraction steps
+            opt.max_fxpiter= 3;             % Maximum number of times to switch between Newton-Kantorovich iterations and contraction iterations.
+            opt.min_cstp   = 4;             % Minimum number of contraction steps
             opt.max_cstp   = 20;            % Maximum number of contraction steps
             opt.ctol       = 0.02;          % Tolerance before switching to N-K algorithm
             opt.rtol       = 0.02;          % Relative tolerance before switching to N-K algorithm
             opt.nstep      = 20;            % Maximum number of Newton-Kantorovich steps
-            opt.ltol0      = 1.0e-12;       % Final exit tolerance in fixed point algorithm, measured in units of numerical precision
+            opt.ltol0      = 1.0e-10;       % Final exit tolerance in fixed point algorithm, measured in units of numerical precision
             opt.printfxp   = 1;             % print iteration info for fixed point algorithm if > 0
-            
+            opt.rtolnk     = .5;             % Tolerance for discarding N-K iteration and move to SA (tolm1/tolm > 1+opt.rtolnk) 
             if nargin>4
                 pfields=fieldnames(options);
                 for i=1:numel(pfields);
                     opt.(pfields{i})=options.(pfields{i});
                 end
             end
-            
             n=numel(cost);
             
+            %Initialize counters
             NKIter=0;
-            for k=1:opt.max_fxpiter;
+            BellmanIter=0;
+            converged=false;%initialize convergence indicator
+            tolm=1;
+
+            for k=1:opt.max_fxpiter; %poli-algorithm loop (switching between SA and N-K and back)
+
                 % SECTION A: CONTRACTION ITERATIONS
                 if opt.printfxp>0
                     fprintf('\n');
-
-                    fprintf('Begin contraction iterations\n');
+                    fprintf('Begin contraction iterations (for the %d. time)\n',k);
                     fprintf('   j           tol        tol(j)/tol(j-1) \n');
                 end;
                 
-                tolm1=1;
-                tic;
-                
-                for j=2:2:opt.max_cstp;
+                %SA contraction steps
+                for j=1:opt.max_cstp;
                     ev1=nfxp.bellman(ev, P, cost, mp);
-                    ev=nfxp.bellman(ev1, P, cost, mp);
+
+                    BellmanIter=BellmanIter+1;
                     
-                    BellmanIter=j;
+                    tolm1=max(abs(ev-ev1));
+                    rtolm=tolm1/tolm;
                     
-                    tolm=max(max(abs(ev-ev1)));
-                    rtolm=tolm/tolm1;
-                    
-                    tolm1=tolm;
                     if opt.printfxp>0
-                        fprintf(' %3.0f   %16.8f %16.8f\n',j, tolm,rtolm);
+                        fprintf(' %3.0f   %16.8f %16.8f\n',j, tolm1,rtolm);
                     end
-                    if tolm < opt.ctol;
+
+                    %prepare for next iteration
+                    ev=ev1;
+                    tolm=tolm1;
+
+                    %stopping criteria
+                    if (j>=opt.min_cstp) && (tolm1 < opt.ctol)
+                        %go to NK iterations due to absolute tolerance
                         break;
                     end;
-                    if (j>=opt.min_cstp) && (abs(mp.beta*mp.beta-rtolm) < opt.rtol);
+                    if (j>=opt.min_cstp) && (abs(mp.beta-rtolm) < opt.rtol)
+                        %go to NK iterations due to relative tolerance
                         break
                     end
                 end
-                
+                %ev is produced after contraction steps
+                %tolm will also be used below
+            
                 % SECTION 2: NEWTON-KANTOROVICH ITERATIONS
                 if opt.printfxp>0
                     fprintf('\n');
-                    fprintf('Begin Newton-Kantorovich iterations at time: %1.5f\n', toc);
+                    fprintf('Begin Newton-Kantorovich iterations (for the %d. time)\n',k);
                     fprintf('  nwt          tol   \n');
                     
                 end
-                [ev1, pk]=nfxp.bellman(ev, P, cost, mp);
-                for nwt=1:opt.nstep;
-                    F=speye(n) - nfxp.dbellman(ev, pk, P,  mp) ;
+                if opt.printfxp>1
+                    %plots
+                    hold on
+                    subplot(2,1,2), plot(ev -ev(1), '--k');
+                end
+
+                %do initial contraction iteration which is part of first N-K iteration
+                [ev1, pk]=nfxp.bellman(ev, P, cost, mp); %also return choice probs=function of ev
+
+                for nwt=1:opt.nstep; %do at most nstep of N-K steps
+
+                    NKIter=NKIter+1;
+
+                    %Do N-K step
+                    F=speye(n) - nfxp.dbellman(pk, P,  mp);%using pk from last call to nfxp.bellman
+                    ev=ev-F\(ev-ev1); %resuing ev here
                     
-                    ev1=ev-F\(ev-ev1);
-                    
-                    [ev, pk]=nfxp.bellman(ev1, P, cost, mp);
-                    tolm=max(max(abs(ev-ev1)));
-                    
+                    %Contraction step for the next N-K iteration
+                    [ev2, pk]=nfxp.bellman(ev, P, cost, mp); %also return choice probs=function of ev
+
+                    %Measure the tolerance
+                    tolm1=max(max(abs(ev-ev2)));
+
                     if opt.printfxp>0
-                        fprintf('   %d     %16.8e  \n',nwt,tolm);
+                        fprintf('   %d     %16.8e  \n',nwt,tolm1);
                     end
-                    adj=ceil(log(abs(max(max(ev)))));
+                    if opt.printfxp>1
+                        %plot ev
+                        hold on
+                        subplot(2,1,2), plot(ev -ev(1), '-r');
+                    end
+
+                    %Discard the N-K step if tolm1 got worse AND we can still switch back to SA
+                    if (tolm1/tolm > 1+opt.rtolnk) && (k<opt.max_fxpiter);
+                        if opt.printfxp>0
+                            %Discrading the N-K step
+                            fprintf('Discarding N-K step\n');
+                        end
+                        ev=ev1; %new contraction step should start from ev1
+                        break;
+                    else
+                        ev1=ev2; %accept N-K step and prepare for new iteration
+                    end;
+
+                    %adjusting the N-K tolerance to the magnitude of ev
+                    adj=ceil(log(abs(max(max(ev1)))));
                     ltol=opt.ltol0*10^adj;  % Adjust final tolerance
-                    if (tolm < ltol) || (nwt > opt.nstep);
+                    ltol=opt.ltol0;
+
+                    if (tolm1 < ltol);
+                        %N-K converged 
+                        converged=true;
                         break
                     end
-                    temp=ev1; % FIXME - Whats going on here
-                    ev1=ev;
-                    ev=temp;
-                    NKIter=nwt;
-                end; % FXP iterations --- holds both the contraction and N-K iterations
-                
-                if (tolm < ltol);
-                    break; % convergence achieved in N-K iterations
-                end;
-                
-                if opt.printfxp>0 && NKIter < opt.nstep;
-                    fprintf('\n');
-                    fprintf('Time to convergence is %10.8f seconds\n', toc);
-                elseif NKIter >= opt.nstep;
-                    warning('Maximum number of iterations exceeded without convergence!');
-                end;
-                
-            end % end of fxp iterations.
-        end % end of solve
-        
+
+                end %Next N-K iteration
+
+                if converged
+                    if opt.printfxp>0
+                        fprintf('Convergence achieved!\n\n');
+                    end
+                    break; %out of poly-algorithm loop
+                else
+                    if nwt>=opt.nstep
+                        warning('No convergence! Maximum number of iterations exceeded without convergence!');
+                        break; %out of poly-algorithm loop with no convergence
+                    end
+                end
+            end
+        end % end of solve        
         
         function [mphat, mpse, cov, g, ll, iterinfo]=maxlik(llfun, p0, pnames, options);
             %NFXP.MAXLIK:  Routine to maximize likelihood functions based on
@@ -347,7 +356,7 @@ classdef nfxp
             %           options.maxit (Scalar):
             %                   Maximum number of iterations (default is 100)
             %
-            %           options.tolg (Scalar):
+            %           options.tolgdirec (Scalar):
             %                   Tolerance for gradient'direc (default is 1e-3)
             %
             %           options.lambda0:
@@ -358,10 +367,12 @@ classdef nfxp
             tt=tic;
             par.title={''};
             par.maxit=100;
-            par.tolg=1e-1;
+            par.tolgdirec=1e-3;
+            par.tol_bhhh=0.1;
             par.output=1;
             par.lambda0=1;
-            par.method='Partial MLE';
+            par.hess=0;
+
             p1=p0;
 
             global BellmanIter NKIter
@@ -369,28 +380,12 @@ classdef nfxp
             iterinfo.ll=0;
             iterinfo.NKIter=0;
             iterinfo.BellmanIter=0;
-
-
                         
             if nargin==4
-                if isfield(options, 'title');
-                    par.title=options.title;
+                pfields=fieldnames(options);
+                for i=1:numel(pfields);
+                    par.(pfields{i})=options.(pfields{i});
                 end
-                if isfield(options, 'output');
-                    par.output=options.output;
-                end
-                if isfield(options, 'maxit');
-                    par.maxit=options.maxit;
-                end
-                if isfield(options, 'tolg');
-                    par.tolg=options.tolg;
-                end
-                if isfield(options, 'lambda0');
-                    par.lambda0 = options.lambda0;
-                end;
-                if isfield(options, 'method');
-                    par.methods = options.method;
-                end;
             end
             
             lambda=par.lambda0;   % initialize stepsize
@@ -399,30 +394,53 @@ classdef nfxp
             % -------------------------
             %  ** BHHH Optimization **
             % -------------------------
+            
+            if (par.hess==1) 
+                strhess='Analytical Hessian';
+                [ll0,ev,s0, h]=llfun(p0);
+                h=-h;
+            elseif (par.hess==0);  
+                strhess='Outer product of scores';
+                [ll0,ev,s0]=llfun(p0);
+                h=s0'*s0;
+            end;
 
-            [ll0,ev,s0]=llfun(p0);
             iterinfo.ll=iterinfo.ll+1;
             iterinfo.NKIter=iterinfo.NKIter+NKIter;
             iterinfo.BellmanIter=iterinfo.BellmanIter+BellmanIter;
 
 
-            h=s0'*s0;
             g=sum(s0)';
             direc=h\g;
             tolm=g'*direc;
+            if tolm<0; % convex area of likelihood, Newton-Raphson moves away from max
+                h=s0'*s0;
+                direc=h\g;
+                tolm=g'*direc;
+                if par.output>=1 
+                    disp('Convex area of likelihood: Switch to BHHH')
+                end
+            end
 
             iterinfo.MajorIter=0;
             for it=0:par.maxit;
                 for i=1:k;
                     np=numel(p1.(char(pnames(i))));
-                    p1.(char(pnames(i)))=p0.(char(pnames(i)))+ lambda*direc(i:i+np-1);
-                    
+                    p1.(char(pnames(i)))=p0.(char(pnames(i)))+ lambda*direc(i:i+np-1);                    
                 end
                 p1.ev=ev;
                 
-             
                 if lambda==par.lambda0;   % If previous step was accepted
-                    [ll,ev,s]=llfun(p1);
+                     if ((par.hess==0) | (abs(tolm) > par.tol_bhhh)); 
+                        strhess='Outer product of the scores';
+                        [ll,ev,s]=llfun(p1);
+                        h=s'*s;
+                    else
+                        [ll,ev,s, h]=llfun(p1);
+                        strhess='Analytical Hessian';
+                        h=-h;
+                    end;
+
                     iterinfo.ll=iterinfo.ll+1;
                     iterinfo.NKIter=iterinfo.NKIter+NKIter;
                     iterinfo.BellmanIter=iterinfo.BellmanIter+BellmanIter;
@@ -460,7 +478,9 @@ classdef nfxp
                     if par.output>1;
                         fprintf('Iteration: %d   \n', iterinfo.MajorIter);
                         fprintf('grad*direc       %10.5f \n', g'*direc);
+                        fprintf('||rel grad||     %10.5f \n', max(abs(g/sum(ll0))));
                         fprintf('Log-likelihood   %10.5f \n', sum(ll));
+                        fprintf('Hessian update   %10s \n', strhess);
                         fprintf('Step length      %10.5f \n', lambda);
                         fprintf('---------------------------------------------------------------------\n');
                         fprintf('    Param.       Estimates      Direction         Gradient\n');
@@ -475,21 +495,23 @@ classdef nfxp
 
                         fprintf('\n');
                     end
-                    h=s'*s;
                     g=sum(s)';
                     iterinfo.MajorIter=iterinfo.MajorIter+1;
                     direc=h\g;
                     tolm=g'*direc;
+                    tolgrad=max(abs(g/sum(ll0)));
+
+                    if tolm<0; % convex area of likelihood, Newton-Raphson moves away from max
+                        h=s'*s;
+                        direc=h\g;
+                        if par.output>=0
+                            disp('Convex area of likelihood: Switch to BHHH')
+                        end
+                    end
                     lambda=par.lambda0; % and reset stepsize
                 end
-               
-                if g'*h*g < 1;  % Stopping rule
-%                    g'*h*g
-                    break;
-                end
- 
                 
-                if tolm < par.tolg;  % Stopping rule
+                if tolm < par.tolgdirec;  % Stopping rule
                     break;
                 end
                 
@@ -525,7 +547,6 @@ classdef nfxp
                     disp('                    `        (___) ');
                     disp('                   --`''------''` ');
                     fprintf('%s \n', char(par.title));
-                    fprintf('Estimation Method: %s\n', par.method);
                     fprintf('Number of iterations: %d\n', iterinfo.MajorIter);
                     fprintf('grad*direc       %10.5f \n', g'*direc);
                     fprintf('Log-likelihood   %10.5f \n', sum(ll));

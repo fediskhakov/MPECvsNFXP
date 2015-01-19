@@ -1,5 +1,5 @@
 % This is the main script to create all the data for the
-% Iskhakov,Rust,Schjerning comment for Judd and Su 2012 Econometrica
+% Iskhakov,Rust,Schjerning comment for Su and Judd 2012 Econometrica
 clear all
 
 %add path to the functions
@@ -13,12 +13,12 @@ global param
 % paths for knitro and ampl
 param.ampl_command='ampl';
 %Need to have correct env variable for knitro to be able to run under ampl!!!
-setenv('DYLD_LIBRARY_PATH','/usr/local/knitro900/lib') %Fedor
-% setenv('DYLD_LIBRARY_PATH','/usr/local/ampl/knitro900/lib') %Bertel
+%setenv('DYLD_LIBRARY_PATH','/usr/local/knitro900/lib') %Fedor
+setenv('DYLD_LIBRARY_PATH','/usr/local/knitro/lib') %Bertel
 
 if 1 %RUN MC or read from saved file
 
-% original model parameters for Judd and Su code (Rust 87)
+% original model parameters for Su and Judd code (Rust 87)
 % param.nT = 120;
 % param.nBus = 50;
 % param.N = 175;
@@ -34,8 +34,8 @@ if 1 %RUN MC or read from saved file
 
 % alternative set of true parameters
 param.nT = 120;
-param.nBus = 50;		%normal sample size (6000)
-%param.nBus = 500;	%larger sample (60,000)
+param.nBus = 500;	    %larger sample (60,000) for Table 2
+param.nBus = 50;		%normal sample size (6000) for Table 1
 param.N = 175;
 param.M = 5;
 param.beta=0.995;
@@ -48,10 +48,10 @@ param.MC=250;					  %number of MC iterations
 param.multistarts=5;		%number of tries for each estimation
 param.runInitEV=0;			%run AMPL to compute EV of true parameter values
 param.figure=0;					%should figures be drawn
-param.runMPECktrlink=1;	%run MPEC/ktrlink in JuddSu code
+param.runMPECktrlink=0;	%run MPEC/ktrlink in JuddSu code
 param.runNFXP=0;				%run NFXP-SA in JuddSu code?
 param.FreqX0=1;					%use frequencies for starting values of prob params
-param.logfile=sprintf('RustBusMLETableX_MC_Multistart_beta%3.0f.out',1000*param.beta);
+param.logfile=sprintf('RustBusMLETableX_MC_Multistart_beta%3.0f.out',100000*param.beta);
 param.runNKktrlink=0;		%run NFXP-NK with ktrlink?
 
 
@@ -80,7 +80,7 @@ for ibeta=1:numel(betavec)
 
 	%load simulated data created in Judd-Su code
 	if ~exist('MC_xt') || ~exist('MC_dt') || ~exist('MC_dx')
-		simdatafile=['RustBusTableXSimDataMC' num2str(param.MC) '_beta' num2str(1000*param.beta) '.mat'];
+		simdatafile=['RustBusTableXSimDataMC' num2str(param.MC) '_beta' num2str(100000*param.beta) '.mat'];
 		load(['juddsu' filesep simdatafile]);
 		disp(['Simulation data loaded from ' simdatafile]);
 		clearbut('param','result_js','result_jr87','result_nk','ibeta',...
@@ -88,6 +88,7 @@ for ibeta=1:numel(betavec)
 	end
 	%call NFXP
 	result_jr87{ibeta}=run_nfxp(param,MC_dt,MC_xt,MC_dx,X0);
+
 
 	%create intermediate tables (for each iteration of beta)
 	ResultTables(param,betavec,result_js,result_jr87,false);
@@ -102,8 +103,9 @@ load 'GrandResultsMC.mat'
 end %RUN MC or read from saved file
 
 %create all tables and graphs
-ResultTables(param,betavec,result_js,result_jr87,true);
-
+ResultTables(param,betavec,result_js,result_jr87,param.figure);
+%ibeta=1;
+%comp_lik{ibeta}=compare_lik(param,MC_dt,MC_xt,MC_dx,X0,result_jr87{ibeta});
 
 
 
