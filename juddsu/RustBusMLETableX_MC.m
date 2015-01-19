@@ -121,7 +121,7 @@ xlabel('x');
 ylabel('EV(x,0)');
 end
 
-save (['truethetaEV_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x');   
+save (['truethetaEV_beta' num2str(100000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x');   
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Simulate Data for 250 date sets -- (state, decision) = (xt,dt)
@@ -170,7 +170,7 @@ X0(1,:)= (1:1:multistarts);
 X0(2:6,:)=1/M;
 X0(7,:)= (4:1:4+(multistarts-1));
 
-save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(1000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt', 'MC_dx','X0');   
+save (['RustBusTableXSimDataMC' num2str(MC) '_beta' num2str(100000*beta)], 'beta', 'nT', 'nBus', 'N', 'M', 'RC', 'thetaCost', 'thetaProbs', 'EV', 'x', 'MC', 'MC_dt', 'MC_xt', 'MC_dx','X0');   
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Setup Optimization Problem for MPEC
@@ -503,7 +503,7 @@ end
 
 thetaAMPLsol = [thetaCostAMPL; thetaProbsAMPL; RCAMPL];
 
-save(['MC' num2str(MC) '_beta' num2str(1000*beta) '_result'], 'thetatrue', 'thetaAMPLsol', 'thetaMPECsol', 'thetaNFXPsol', 'KnitroExitAMPL', ...
+save(['MC' num2str(MC) '_beta' num2str(100000*beta) '_result'], 'thetatrue', 'thetaAMPLsol', 'thetaMPECsol', 'thetaNFXPsol', 'KnitroExitAMPL', ...
     'SolveTimeAMPL', 'ObjValAMPL', 'IterAMPL', 'FunEvalAMPL', 'SuccessAMPL','flagMPECsol','tMPECsol', 'fvalMPECsol', 'IterMPECsol', ...
     'FunEvalMPECsol', 'SuccessMPEC', 'flagNFXPsol','tNFXPsol', 'fvalNFXPsol', 'IterNFXPsol', 'FunEvalNFXPsol', 'numBellEvalsol', 'SuccessNFXP');
 
@@ -554,7 +554,7 @@ meanIterNFXP = mean(IterNFXPsol)/multistarts;
 meanFunEvalNFXP = mean(FunEvalNFXPsol)/multistarts;
 meanBellEvalNFXP = mean(numBellEvalsol)/multistarts;
 
-save(['MC' num2str(MC) '_beta' num2str(1000*beta) '_summary'], 'thetatrue', 'TotalSuccessAMPL', 'meanthetaAMPL', 'stdevthetaAMPL', 'biasthetaAMPL', 'RMSEthetaAMPL', 'meanObjValAMPL','meantAMPL', 'meanIterAMPL','meanFunEvalAMPL', ...
+save(['MC' num2str(MC) '_beta' num2str(100000*beta) '_summary'], 'thetatrue', 'TotalSuccessAMPL', 'meanthetaAMPL', 'stdevthetaAMPL', 'biasthetaAMPL', 'RMSEthetaAMPL', 'meanObjValAMPL','meantAMPL', 'meanIterAMPL','meanFunEvalAMPL', ...
     'TotalSuccessMPEC', 'meanthetaMPEC', 'stdevthetaMPEC', 'biasthetaMPEC', 'RMSEthetaMPEC', 'meanObjValMPEC','meantMPEC', 'meanIterMPEC','meanFunEvalMPEC', ...
     'TotalSuccessNFXP', 'meanthetaNFXP', 'stdevthetaNFXP', 'biasthetaNFXP', 'RMSEthetaNFXP', 'meanObjValNFXP','meantNFXP', 'meanIterNFXP','meanFunEvalNFXP', 'meanBellEvalNFXP');
 

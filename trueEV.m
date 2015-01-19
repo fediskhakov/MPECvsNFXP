@@ -33,7 +33,7 @@ if param.figure
 	%check against Judd-Su calculations of EV
 
 	try
-		load(['juddsu/truethetaEV_beta' num2str(1000*param.beta)]);
+		load(['juddsu/truethetaEV_beta' num2str(100000*param.beta)]);
 		x = (1:param.N)';
 		P0 = 1./ (1 + exp( 0.001*thetaCost*x - param.beta.*EV - RC - 0.001*thetaCost*x(1)+ param.beta*EV(1))); %JS choice probs
 
