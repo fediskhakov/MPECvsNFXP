@@ -1,6 +1,8 @@
-Code for Comment for Judd and Su 2012, Econometrica
+Code for the Comment for Judd and Su 2012, Econometrica
 
 By: Fedor Iskhakov, John Rust and Bertel Schjerning
+
+September 5, 2015
 
 This directory contains the modified code from Su and Judd Econometrica paper
 The intention of this directory is to carefully monitor all the changes we make to the original code 
@@ -13,7 +15,9 @@ Che-Lin Su website on April 3, 2014
 link:
 http://faculty.chicagobooth.edu/che-lin.su/research/SuJudd_Code_ECMA.zip
 
-To replicate the results in the comment, do:
+To replicate the initial full set of results in the comment
+(the published version of the comment contains limited results)
+do:
 
 Table 1: 
 	Run run.m with no changes except perhaps changing the AMPL directory and link to KNITRO library
